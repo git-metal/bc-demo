@@ -281,7 +281,7 @@ def get_shop_info(src):
 
 def get_data():
     # 获取某一个类目下的所有url
-    urls = get_sub_category_urls(False)
+    urls = get_sub_category_urls(True)
 
     # 加载woff字体，woff文件可能会有更新
     get_woff()
@@ -294,17 +294,18 @@ def get_data():
 
         time.sleep(30 + random.randint(10, 30))
         count += 1
-        if count > 3:
+        if count > 5:
             print(count)
             break
 
 
 if __name__ == '__main__':
     try:
-        # get_data()
+        get_data()
 
-        get_woff()
-        get_shop_list('http://www.dianping.com/shenzhen/ch30/g135r88246o3', True)
+        # 测试
+        # get_woff()
+        # get_shop_list('http://www.dianping.com/shenzhen/ch30/g135r88246o3', True)
         # download_woff_font("http://s3plus.meituan.net/v1/mss_0a06a471f9514fc79c981b5466f56b91/svgtextcss/07cfbc597da8b932f4f1a3361255f809.css")
     except Exception as e:
         print(e)
