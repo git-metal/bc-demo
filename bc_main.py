@@ -7,6 +7,7 @@ import re
 from fontTools.ttLib import TTFont
 import html
 from pathlib import Path
+import random
 import request_utils
 
 # 美食 深圳 龙岗 岗头/雪象
@@ -18,6 +19,9 @@ words = '1234567890店中美家馆小车大市公酒行国品发电金心业商�
 address_woff = {}
 shopNum_woff = {}
 tagName_woff = {}
+
+# woff url
+s3plus_url = ''
 
 
 def get_regex_data(regex, buf):
@@ -43,15 +47,12 @@ def get_xpath(xpath, content):
     """
     out = []
     tree = etree.HTML(content)
-    # tree = etree.HTML(content, parser=etree.HTMLParser(encoding='utf-8'))
     results = tree.xpath(xpath)
     for result in results:
         if 'ElementStringResult' in str(type(result)) or 'ElementUnicodeResult' in str(type(result)):
             out.append(result)
         else:
             out.append(etree.tostring(result))
-            # out.append(etree.tostring(result, encoding='utf-8', pretty_print=True, method='html').decode('utf-8'))
-            # out.append(etree.tostring(result, encoding='utf-8', pretty_print=True, method='html'))
     return out
 
 
@@ -150,6 +151,29 @@ def get_woff_string(src, woff):
     return ret
 
 
+def download_woff_font(url):
+    fonts = {}
+    response = request_utils.get(url)
+    if response.status_code == 200:
+        content = response.content.decode()
+        font_list = re.findall('@font-face\{(.*?)\}', content)
+
+        # 获取woff下载url
+        for font in font_list:
+            font_name = get_regex_data('font-family: "PingFangSC-Regular-(.*?)"', font)
+            font_path = get_regex_data(',url\("(.*?.woff)"\)', font)
+            fonts[font_name] = f'http:{font_path}'
+            print(f"font name:{font_name} path:{font_path}")
+
+    # 下载woff文件
+    for name, url in fonts.items():
+        response = request_utils.get(url)
+        if response.status_code == 200:
+            with open(f'{name}.woff', 'wb') as f:
+                f.write(response.content)
+            print(f'download {name}.woff success')
+
+
 def get_img(name, url):
     img_path = Path('img')
     if not img_path.exists():
@@ -162,9 +186,9 @@ def get_img(name, url):
             f.write(content)
 
 
-def get_food_urls(save):
+def get_sub_category_urls(save):
     src = ''
-    file_name = 'food_home.html'
+    file_name = 'category.html'
     if save:
         src = request_utils.get_html(base_url)
         with open(file_name, 'w', encoding='utf-8') as f:
@@ -173,7 +197,13 @@ def get_food_urls(save):
         with open(file_name, 'r', encoding='utf-8') as f:
             src = f.read()
 
-    # 解析出美食的url
+    # 获取woff字体的地址
+    s3plus_url = get_regex_data('(//s3plus\.meituan\.net/.*?)"', src)
+    if save and len(s3plus_url) != 0:
+        # 下载woff字体
+        download_woff_font(f'http:{s3plus_url}')
+
+    # 解析出分类的url
     url_list = get_xpath('//div[@class="nav-category J_filter_category"]/div/div/div/a', src)
     urls = {}
     for item in url_list:
@@ -184,9 +214,9 @@ def get_food_urls(save):
     return urls
 
 
-def get_food_shop_list(url, save):
+def get_shop_list(url, save):
     src = ''
-    file_name = 'food_shop_list.html'
+    file_name = 'shop_list.html'
     if save:
         src = request_utils.get_html(url)
         with open(file_name, 'w', encoding='utf-8') as f:
@@ -199,7 +229,16 @@ def get_food_shop_list(url, save):
     content = get_regex_data('(<div class="content">[\d\D]*?)<div class="page"', src)
     li_list = re.findall('(<li class[\d\D]*?</li>)', content)
 
+    # 如果商铺比较少，可能不会有分页，要单独再处理一次
+    if len(li_list) == 0:
+        content = get_regex_data('(<div class="content">[\d\D]*?)<div class="sear-result no-result"', src)
+        li_list = re.findall('(<li class[\d\D]*?</li>)', content)
+
     print("---- 商铺信息 ----")
+    if len(li_list) <= 2:
+        print("没找到商铺信息")
+        return
+
     for item in li_list[2:]:
         get_shop_info(item)
 
@@ -240,18 +279,33 @@ def get_shop_info(src):
     pass
 
 
+def get_data():
+    # 获取某一个类目下的所有url
+    urls = get_sub_category_urls(False)
+
+    # 加载woff字体，woff文件可能会有更新
+    get_woff()
+
+    # 测试加载第一个，根据好评排序
+    count = 1
+    for name, url in urls.items():
+        print(f'name:{name} url:{url}o3')
+        get_shop_list(url + 'o3', True)
+
+        time.sleep(30 + random.randint(10, 30))
+        count += 1
+        if count > 3:
+            print(count)
+            break
+
+
 if __name__ == '__main__':
     try:
-        # 加载woff字体，woff文件可能会有更新
+        # get_data()
+
         get_woff()
-
-        # 获取某一个类目下的所有url
-        urls = get_food_urls(False)
-
-        # 测试加载第一个，根据好评排序
-        for name, url in urls.items():
-            get_food_shop_list(url + 'o3', False)
-            break
+        get_shop_list('http://www.dianping.com/shenzhen/ch30/g135r88246o3', True)
+        # download_woff_font("http://s3plus.meituan.net/v1/mss_0a06a471f9514fc79c981b5466f56b91/svgtextcss/07cfbc597da8b932f4f1a3361255f809.css")
     except Exception as e:
         print(e)
         pass
