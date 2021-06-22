@@ -18,8 +18,8 @@ class ShopInfo:
     category = ''
     sub_category = ''
 
-    def get_sql(self):
-        return f'insert into food values ("{self.name}", "{self.address}", {self.lat}, {self.lng}, "{self.tag}", ' \
+    def get_sql(self, table):
+        return f'insert into {table} values ("{self.name}", "{self.address}", {self.lat}, {self.lng}, "{self.tag}", ' \
                f'{self.score}, {self.review_num}, "{self.img_url}", "{self.shop_url}", "{self.country}",' \
                f'"{self.province}", "{self.locality}", "{self.sub_locality}", "{self.street}",' \
                f'"{self.category}", "{self.sub_category}");'
