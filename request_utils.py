@@ -18,6 +18,7 @@ def get_html(url):
     # return response.content.decode()
     return response.text
 
+
 def download_img(url):
     response = requests.get(url, headers=headers, stream=True)
     if response.status_code == 200:
