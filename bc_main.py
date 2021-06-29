@@ -11,6 +11,7 @@ import request_utils
 import db_util
 from bc_bean import ShopInfo
 
+
 # 初始位置信息，只收集制定区域的
 # base_url = 'http://www.dianping.com/shenzhen/ch20/r88246'
 # base_country = '中国'
@@ -374,9 +375,21 @@ def get_data():
 
 if __name__ == '__main__':
     try:
-        base_info = ['http://www.dianping.com/nanjing/ch20/r91120', '中国', '江苏', '南京', '雨花台区', '铁心桥/楚翘城', '购物', '', 'shopping']
-        set_base_info(base_info)
-        get_data()
+        # base_info = ['http://www.dianping.com/shenzhen/ch45/r88246', '中国', '广东', '深圳', '龙岗', '岗头/雪象', '运动健身', '', 'sport']
+        # base_info = ['http://www.dianping.com/nanjing/ch45/r91120', '中国', '江苏', '南京', '雨花台区', '铁心桥/楚翘城', '运动健身', '', 'sport']
+
+        # base_info = ['http://www.dianping.com/shenzhen/ch65', '中国', '广东', '深圳', '龙岗', '岗头/雪象', '爱车', '', 'car']
+        # base_info = ['http://www.dianping.com/nanjing/ch65', '中国', '江苏', '南京', '雨花台区', '铁心桥/楚翘城', '爱车', '', 'car']
+
+        bases = [
+            ['http://www.dianping.com/shenzhen/ch85', '中国', '广东', '深圳', '龙岗', '岗头/雪象', '爱车', '', 'medical'],
+            ['http://www.dianping.com/nanjing/ch85', '中国', '江苏', '南京', '雨花台区', '铁心桥/楚翘城', '爱车', '', 'medical']
+        ]
+
+        for info in bases:
+            set_base_info(info)
+            get_data()
+            time.sleep(10)
 
         # 测试
         # get_woff()
